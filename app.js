@@ -1,5 +1,5 @@
 // --- CONFIGURAÇÃO DO FIREBASE ---
-// Subistatua pelos dados que você copiou do seu Console Firebase!
+// Lembre-se de substituir com as suas credenciais reais do Firebase Console!
 const firebaseConfig = {
     apiKey: "AIzaSyCXUByWccNg_Ao29j4P0xofDnRDkqw6uok",
     authDomain: "contexto-multiplayer.firebaseapp.com",
@@ -10,46 +10,64 @@ const firebaseConfig = {
     appId: "1:302542192118:web:d5f86b4077230aa78d1bd7"
 };
 
-// Inicializa o Firebase
+// Inicializando a conexão com a base de dados
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// --- ESTADO LOCAL DO JOGO ---
+// --- ESTADO LOCAL GLOBAL ---
 let roomID = "";
 let myRole = ""; // 'player1' ou 'player2'
 let opponentRole = "";
-let targetWord = "parede"; // Palavra oculta padrão para este exemplo
+let targetWord = ""; // Será injetada dinamicamente via Firebase por rodada
 
-// Simulação local de um banco de dados de distâncias contextuais 
-// Em um jogo completo, você pode expandir esse objeto JSON com milhares de palavras
-const mockContextDistances = {
-    "parede": 1,
-    "muro": 3,
-    "tijolo": 8,
-    "pintura": 15,
-    "quadro": 42,
-    "casa": 68,
-    "janela": 95,
-    "painel": 110,
-    "desenho": 320,
-    "manual": 1540,
-    "carro": 4500,
-    "computador": 8900
+// --- DICIONÁRIO DE PALAVRAS E DISTÂNCIAS CONTEXTUAIS (Expansível) ---
+const JOGO_PALAVRAS = {
+    "parede": {
+        "muro": 3, "tijolo": 8, "pintura": 15, "quadro": 42, "casa": 68,
+        "janela": 95, "painel": 110, "desenho": 320, "manual": 1540
+    },
+    "computador": {
+        "notebook": 2, "teclado": 5, "mouse": 12, "tela": 20, "internet": 45,
+        "programação": 60, "escritório": 90, "janela": 400, "cadeira": 600
+    },
+    "mercado": {
+        "supermercado": 2, "compras": 6, "preço": 10, "caixa": 18, "comida": 35,
+        "carrinho": 50, "dinheiro": 75, "feira": 120, "rua": 500
+    },
+    "cachorro": {
+        "cão": 2, "gato": 10, "pet": 15, "ração": 22, "veterinário": 40,
+        "animal": 55, "coleira": 70, "parque": 140, "lobo": 300
+    }
 };
 
-// Função para calcular a similaridade (Opção Estática Embutida)
-function getContextDistance(word) {
-    const cleanWord = word.trim().toLowerCase();
-    if (cleanWord === targetWord) return 1;
-    // Se a palavra existir no nosso dicionário, retorna a distância, se não, dá um valor alto padrão
-    return mockContextDistances[cleanWord] || (10000 + Math.floor(Math.random() * 5000));
+// Escolha aleatória de palavras disparada apenas na criação da sala
+function getRandomTargetWord() {
+    const palavrasDisponiveis = Object.keys(JOGO_PALAVRAS);
+    const indiceAleatorio = Math.floor(Math.random() * palavrasDisponiveis.length);
+    return palavrasDisponiveis[indiceAleatorio];
 }
 
-// --- CONECTAR E ENTRAR NA SALA ---
+// Retorna a proximidade contextual com base na palavra-alvo ativa
+function getContextDistance(word) {
+    const cleanWord = word.trim().toLowerCase();
+    
+    if (cleanWord === targetWord) return 1;
+    
+    const contextoAtivo = JOGO_PALAVRAS[targetWord];
+    
+    if (contextoAtivo && contextoAtivo[cleanWord]) {
+        return contextoAtivo[cleanWord];
+    }
+    
+    // Penalidade semântica padrão caso fuja totalmente do contexto estruturado
+    return 8000 + Math.floor(Math.random() * 4000);
+}
+
+// --- LOGICA DE ACESSO À SALA MULTIPLAYER ---
 function joinRoom(role) {
     const roomInput = document.getElementById("room-input").value.trim();
     if (!roomInput) {
-        alert("Por favor, digite um nome ou código para a sala.");
+        alert("Insira um nome ou código identificador para a sala.");
         return;
     }
 
@@ -60,74 +78,71 @@ function joinRoom(role) {
     document.getElementById("display-room-id").innerText = roomID;
     document.getElementById("display-player-role").innerText = role === "player1" ? "Jogador 1 (Azul)" : "Jogador 2 (Rosa)";
 
-    // Se for o Jogador 1, vamos inicializar a sala no Firebase se ela não existir
+    // Jogador 1 atua como o 'Host' definindo as variáveis iniciais da rodada
     if (myRole === "player1") {
         database.ref(`rooms/${roomID}`).once('value', (snapshot) => {
             if (!snapshot.exists()) {
+                const palavraSelecionada = getRandomTargetWord();
+                
                 database.ref(`rooms/${roomID}`).set({
                     currentTurn: "player1",
                     winner: "",
-                    targetWord: targetWord
+                    targetWord: palavraSelecionada
                 });
             }
         });
     }
 
-    // Alternar telas na interface
+    // Gerencia a troca de telas na DOM
     document.getElementById("lobby-screen").classList.add("hidden");
     document.getElementById("game-screen").classList.remove("hidden");
 
-    // Iniciar escuta em tempo real da sala
+    // Aciona a sincronização em tempo real do Firebase
     startRealtimeListeners();
 }
 
-// --- ESCUTADORES EM TEMPO REAL (FIREBASE) ---
+// --- ESCUTADORES EM TEMPO REAL ---
 function startRealtimeListeners() {
-    // 1. Escutar alterações de Turno e Vitória Geral
+    // Sincroniza dados estruturais da partida (Turno, Alvo e Vencedor)
     database.ref(`rooms/${roomID}`).on('value', (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
 
-        // Se houver uma palavra alvo definida pelo servidor da sala, sincronizamos localmente
         if (data.targetWord) targetWord = data.targetWord;
 
-        // Verificar se alguém ganhou
         if (data.winner) {
             handleEndGame(data.winner);
             return;
         }
 
-        // Gerenciar alternância de Turnos
         handleTurnManagement(data.currentTurn);
     });
 
-    // 2. Escutar novas palavras adicionadas na lista (Histórico Compartilhado)
+    // Sincroniza a lista histórica de tentativas enviadas
     database.ref(`rooms/${roomID}/guesses`).on('value', (snapshot) => {
         const container = document.getElementById("words-list-container");
-        container.innerHTML = ""; // Limpa para renderizar atualizado
+        container.innerHTML = "";
 
         if (!snapshot.exists()) {
             container.innerHTML = `<p class="empty-msg">Nenhum palpite enviado ainda nesta partida.</p>`;
             return;
         }
 
-        let hasGuesses = false;
-        // Transformar objeto em array e ordenar do mais recente para o mais antigo
         const guessesArray = [];
         snapshot.forEach((childSnapshot) => {
             guessesArray.push(childSnapshot.val());
-            hasGuesses = true;
         });
         
-        guessesArray.reverse(); // Últimos palpites primeiro no topo
+        // Exibe os palpites mais recentes sempre no topo da pilha
+        guessesArray.reverse();
 
         guessesArray.forEach((guessData) => {
             const entry = document.createElement("div");
             entry.className = `word-entry ${guessData.player === "player1" ? "from-p1" : "from-p2"}`;
             
-            const playerTag = guessData.player === "player1" ? "J1" : "J2";
+            const tag = guessData.player === "player1" ? "J1" : "J2";
             entry.innerHTML = `
-                <span><strong>[${playerTag}]</strong> ${guessData.word}</span>
+                <span><strong>[${tag}]</strong> ${guessData.word}</span>
                 <span class="rank-badge">${guessData.rank === 1 ? "⭐ ACERTOU!" : "Rank: " + guessData.rank}</span>
             `;
             container.appendChild(entry);
@@ -135,7 +150,7 @@ function startRealtimeListeners() {
     });
 }
 
-// --- CONTROLAR QUEM JOGA AGORA ---
+// --- GERENCIADOR DE INTERFACE POR TURNOS ---
 function handleTurnManagement(currentTurn) {
     const inputField = document.getElementById("word-input");
     const submitBtn = document.getElementById("btn-submit");
@@ -146,7 +161,6 @@ function handleTurnManagement(currentTurn) {
     const p1Status = document.getElementById("status-player1");
     const p2Status = document.getElementById("status-player2");
 
-    // Atualizar painéis visuais superiores
     if (currentTurn === "player1") {
         p1Panel.classList.add("active");
         p2Panel.classList.remove("active");
@@ -159,12 +173,13 @@ function handleTurnManagement(currentTurn) {
         p2Status.innerText = "Sua Vez";
     }
 
-    // Habilitar ou Bloquear o campo dependendo se é a vez do usuário atual
+    // Habilita ou desabilita os inputs baseado no papel do jogador atual
     if (currentTurn === myRole) {
         inputField.disabled = false;
         submitBtn.disabled = false;
-        turnMessage.innerText = "👉 É O SEU TURNO! Faça o seu palpite semântico.";
+        turnMessage.innerText = "👉 É O SEU TURNO! Digite o seu palpite semântico.";
         turnMessage.style.color = myRole === "player1" ? "#1e88e5" : "#e53935";
+        inputField.focus();
     } else {
         inputField.disabled = true;
         submitBtn.disabled = true;
@@ -173,25 +188,21 @@ function handleTurnManagement(currentTurn) {
     }
 }
 
-// --- ENVIAR UM PALPITE ---
+// --- ENVIO DO PALPITE ---
 function sendGuess() {
     const inputField = document.getElementById("word-input");
     const wordGuessed = inputField.value.trim().toLowerCase();
 
     if (!wordGuessed) return;
 
-    // Bloqueia preventivo local para não clicar duas vezes rápido
+    // Bloqueio preventivo na UI para evitar requisições duplicadas
     inputField.disabled = true;
     document.getElementById("btn-submit").disabled = true;
 
-    // 1. Calcula o ranking de distância contextualmente
     const calculatedRank = getContextDistance(wordGuessed);
-
-    // 2. Cria as atualizações do Firebase em lote atômico
     const newGuessRef = database.ref(`rooms/${roomID}/guesses`).push();
     const updates = {};
     
-    // Grava o palpite na lista
     updates[`rooms/${roomID}/guesses/${newGuessRef.key}`] = {
         word: wordGuessed,
         player: myRole,
@@ -199,32 +210,31 @@ function sendGuess() {
         timestamp: Date.now()
     };
 
-    // 3. Verifica se acertou na mosca ou passa a vez
+    // Avalia o critério de vitória ou passa a vez
     if (wordGuessed === targetWord) {
         updates[`rooms/${roomID}/winner`] = myRole;
     } else {
-        updates[`rooms/${roomID}/currentTurn`] = opponentRole; // PASSA A VEZ PRO OUTRO JOGADOR
+        updates[`rooms/${roomID}/currentTurn`] = opponentRole;
     }
 
-    // Envia tudo sincronizado para o Firebase
     database.ref().update(updates).then(() => {
-        inputField.value = ""; // Limpa a barra de digitação
+        inputField.value = "";
     }).catch(err => {
-        console.error("Erro ao processar turno: ", err);
+        console.error("Falha na sincronização dos dados: ", err);
     });
 }
 
-// --- TRATAR TELA DE VITÓRIA ---
+// --- FIM DE JOGO ---
 function handleEndGame(winner) {
     const turnMessage = document.getElementById("turn-message");
     document.getElementById("word-input").disabled = true;
     document.getElementById("btn-submit").disabled = true;
 
     if (winner === myRole) {
-        turnMessage.innerHTML = "🎉 PARABÉNS! Você descobriu a palavra secreta e venceu o jogo!";
+        turnMessage.innerHTML = "🎉 VOCÊ VENCEU! Você decifrou a palavra semântica secreta!";
         turnMessage.style.color = "#2ed573";
     } else {
-        turnMessage.innerHTML = "💥 FIM DE JOGO! Seu oponente adivinhou a palavra antes de você.";
+        turnMessage.innerHTML = "💥 FIM DE JOGO! O oponente acertou a palavra secreta antes.";
         turnMessage.style.color = "#ff4757";
     }
 }
