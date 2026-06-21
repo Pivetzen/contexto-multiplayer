@@ -1,5 +1,4 @@
 // --- CONFIGURAÇÃO DO FIREBASE ---
-// Lembre-se de substituir com as suas credenciais reais do Firebase Console!
 const firebaseConfig = {
     apiKey: "AIzaSyCXUByWccNg_Ao29j4P0xofDnRDkqw6uok",
     authDomain: "contexto-multiplayer.firebaseapp.com",
@@ -10,78 +9,86 @@ const firebaseConfig = {
     appId: "1:302542192118:web:d5f86b4077230aa78d1bd7"
 };
 
-// Inicializando a conexão com a base de dados
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
 // --- ESTADO LOCAL GLOBAL ---
 let roomID = "";
-let myRole = ""; // 'player1' ou 'player2'
+let myRole = ""; 
 let opponentRole = "";
-let targetWord = ""; // Será injetada dinamicamente via Firebase por rodada
+let targetWord = ""; 
 
-// --- DICIONÁRIO DE PALAVRAS E DISTÂNCIAS CONTEXTUAIS (Expansível) ---
-const JOGO_PALAVRAS = {
-    "parede": {
-        "muro": 3, "tijolo": 8, "pintura": 15, "quadro": 42, "casa": 68,
-        "janela": 95, "painel": 110, "desenho": 320, "manual": 1540
-    },
-    "computador": {
-        "notebook": 2, "teclado": 5, "mouse": 12, "tela": 20, "internet": 45,
-        "programação": 60, "escritório": 90, "janela": 400, "cadeira": 600
-    },
-    "mercado": {
-        "supermercado": 2, "compras": 6, "preço": 10, "caixa": 18, "comida": 35,
-        "carrinho": 50, "dinheiro": 75, "feira": 120, "rua": 500
-    },
-    "cachorro": {
-        "cão": 2, "gato": 10, "pet": 15, "ração": 22, "veterinário": 40,
-        "animal": 55, "coleira": 70, "parque": 140, "lobo": 300
-    }
-};
+// Banco de dados carregado dinamicamente via arquivo externo
+let DICIONARIO_COMPLETO = {};
 
-// Escolha aleatória de palavras disparada apenas na criação da sala
+// --- CARREGAR DICIONÁRIO EXTERNO ---
+// Carrega o arquivo JSON local ou de uma URL pública do GitHub
+function carregarDicionarioEIniciar(role) {
+    const urlDicionario = "palavras_contexto.json"; // Se subir pro github, pode ser o caminho relativo ou a URL do raw
+
+    fetch(urlDicionario)
+        .then(response => response.json())
+        .then(data => {
+            DICIONARIO_COMPLETO = data.partidas;
+            console.log("Dicionário de contextos carregado com sucesso!");
+            // Após carregar o dicionário, prossegue para entrar na sala
+            executarEntradaNaSala(role);
+        })
+        .catch(error => {
+            console.error("Erro ao carregar o dicionário público:", error);
+            alert("Erro ao carregar os dados do jogo. Verifique sua conexão.");
+        });
+}
+
+// Sorteia uma palavra contida no arquivo JSON público
 function getRandomTargetWord() {
-    const palavrasDisponiveis = Object.keys(JOGO_PALAVRAS);
+    const palavrasDisponiveis = Object.keys(DICIONARIO_COMPLETO);
     const indiceAleatorio = Math.floor(Math.random() * palavrasDisponiveis.length);
     return palavrasDisponiveis[indiceAleatorio];
 }
 
-// Retorna a proximidade contextual com base na palavra-alvo ativa
+// Retorna a proximidade usando o nó da palavra ativa carregada do arquivo externo
 function getContextDistance(word) {
-    const cleanWord = word.trim().toLowerCase();
+    const cleanWord = word.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove acentos
+    const cleanTarget = targetWord.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    if (cleanWord === cleanTarget) return 1;
     
-    if (cleanWord === targetWord) return 1;
-    
-    const contextoAtivo = JOGO_PALAVRAS[targetWord];
+    // Busca o contexto da palavra secreta ativa no arquivo baixado
+    const contextoAtivo = DICIONARIO_COMPLETO[targetWord];
     
     if (contextoAtivo && contextoAtivo[cleanWord]) {
         return contextoAtivo[cleanWord];
     }
     
-    // Penalidade semântica padrão caso fuja totalmente do contexto estruturado
+    // Penalidade caso não esteja no grupo semântico mapeado
     return 8000 + Math.floor(Math.random() * 4000);
 }
 
-// --- LOGICA DE ACESSO À SALA MULTIPLAYER ---
+// --- LOGICA DE ACESSO MULTIPLAYER ---
 function joinRoom(role) {
     const roomInput = document.getElementById("room-input").value.trim();
     if (!roomInput) {
         alert("Insira um nome ou código identificador para a sala.");
         return;
     }
-
     roomID = roomInput;
+
+    // Primeiro baixa o dicionário público, depois valida a sala
+    carregarDicionarioEIniciar(role);
+}
+
+function ejecutarEntradaNaSala(role) {
     myRole = role;
     opponentRole = role === "player1" ? "player2" : "player1";
 
     document.getElementById("display-room-id").innerText = roomID;
     document.getElementById("display-player-role").innerText = role === "player1" ? "Jogador 1 (Azul)" : "Jogador 2 (Rosa)";
 
-    // Jogador 1 atua como o 'Host' definindo as variáveis iniciais da rodada
     if (myRole === "player1") {
         database.ref(`rooms/${roomID}`).once('value', (snapshot) => {
             if (!snapshot.exists()) {
+                // Seleciona uma palavra totalmente aleatória extraída do JSON baixado
                 const palavraSelecionada = getRandomTargetWord();
                 
                 database.ref(`rooms/${roomID}`).set({
@@ -93,17 +100,14 @@ function joinRoom(role) {
         });
     }
 
-    // Gerencia a troca de telas na DOM
     document.getElementById("lobby-screen").classList.add("hidden");
     document.getElementById("game-screen").classList.remove("hidden");
 
-    // Aciona a sincronização em tempo real do Firebase
     startRealtimeListeners();
 }
 
 // --- ESCUTADORES EM TEMPO REAL ---
 function startRealtimeListeners() {
-    // Sincroniza dados estruturais da partida (Turno, Alvo e Vencedor)
     database.ref(`rooms/${roomID}`).on('value', (snapshot) => {
         const data = snapshot.val();
         if (!data) return;
@@ -118,7 +122,6 @@ function startRealtimeListeners() {
         handleTurnManagement(data.currentTurn);
     });
 
-    // Sincroniza a lista histórica de tentativas enviadas
     database.ref(`rooms/${roomID}/guesses`).on('value', (snapshot) => {
         const container = document.getElementById("words-list-container");
         container.innerHTML = "";
@@ -133,7 +136,6 @@ function startRealtimeListeners() {
             guessesArray.push(childSnapshot.val());
         });
         
-        // Exibe os palpites mais recentes sempre no topo da pilha
         guessesArray.reverse();
 
         guessesArray.forEach((guessData) => {
@@ -173,7 +175,6 @@ function handleTurnManagement(currentTurn) {
         p2Status.innerText = "Sua Vez";
     }
 
-    // Habilita ou desabilita os inputs baseado no papel do jogador atual
     if (currentTurn === myRole) {
         inputField.disabled = false;
         submitBtn.disabled = false;
@@ -195,7 +196,6 @@ function sendGuess() {
 
     if (!wordGuessed) return;
 
-    // Bloqueio preventivo na UI para evitar requisições duplicadas
     inputField.disabled = true;
     document.getElementById("btn-submit").disabled = true;
 
@@ -210,8 +210,11 @@ function sendGuess() {
         timestamp: Date.now()
     };
 
-    // Avalia o critério de vitória ou passa a vez
-    if (wordGuessed === targetWord) {
+    // Valida com tratamento de string limpa (sem acentos)
+    const cleanGuessed = wordGuessed.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const cleanTarget = targetWord.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    if (cleanGuessed === cleanTarget) {
         updates[`rooms/${roomID}/winner`] = myRole;
     } else {
         updates[`rooms/${roomID}/currentTurn`] = opponentRole;
@@ -220,7 +223,7 @@ function sendGuess() {
     database.ref().update(updates).then(() => {
         inputField.value = "";
     }).catch(err => {
-        console.error("Falha na sincronização dos dados: ", err);
+        console.error("Falha na sincronização: ", err);
     });
 }
 
@@ -231,10 +234,10 @@ function handleEndGame(winner) {
     document.getElementById("btn-submit").disabled = true;
 
     if (winner === myRole) {
-        turnMessage.innerHTML = "🎉 VOCÊ VENCEU! Você decifrou a palavra semântica secreta!";
+        turnMessage.innerHTML = "🎉 VOCÊ VENCEU! Você decifrou a palavra semântica secreta da rodada!";
         turnMessage.style.color = "#2ed573";
     } else {
-        turnMessage.innerHTML = "💥 FIM DE JOGO! O oponente acertou a palavra secreta antes.";
+        turnMessage.innerHTML = "💥 FIM DE JOGO! O oponente acertou a palavra secreta primeiro.";
         turnMessage.style.color = "#ff4757";
     }
 }
