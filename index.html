@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convexo • Multiplayer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+</head>
+<body>
+
+    <div class="game-container">
+        <div id="lobby-screen" class="screen">
+            <h1>Convexo Multiplayer</h1>
+            <p>Crie uma sala ou entre em uma existente para jogar em turnos com seu amigo.</p>
+            <div class="input-group">
+                <input type="text" id="room-input" placeholder="Digite o nome ou ID da sala">
+                <button id="btn-join-p1" onclick="joinRoom('player1')">Criar/Entrar como Jogador 1 (Azul)</button>
+                <button id="btn-join-p2" onclick="joinRoom('player2')">Entrar como Jogador 2 (Rosa)</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <header>
+                <h2>CONVEXO • MULTIPLAYER</h2>
+                <div class="room-indicator">Sala: <span id="display-room-id">--</span> | Você é: <span id="display-player-role">--</span></div>
+            </header>
+
+            <div class="scoreboard">
+                <div class="player-panel p1-panel" id="panel-player1">
+                    <span class="player-title">JOGADOR 1</span>
+                    <span class="player-status" id="status-player1">AGUARDANDO...</span>
+                </div>
+                <div class="player-panel p2-panel" id="panel-player2">
+                    <span class="player-title">JOGADOR 2</span>
+                    <span class="player-status" id="status-player2">AGUARDANDO...</span>
+                </div>
+            </div>
+
+            <div class="turn-announcer" id="turn-message">
+                Carregando partida...
+            </div>
+
+            <div class="input-section">
+                <input type="text" id="word-input" placeholder="Digite uma palavra..." disabled>
+                <button id="btn-submit" onclick="sendGuess()" disabled>Enviar Palpite ⮞</button>
+            </div>
+
+            <div class="history-section">
+                <h3>Lista de Palavras e Rankings</h3>
+                <div id="words-list-container">
+                    <p class="empty-msg">Nenhum palpite enviado ainda nesta partida.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
