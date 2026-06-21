@@ -1,0 +1,192 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #faf8f5;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+}
+
+.game-container {
+    width: 100%;
+    max-width: 500px;
+    background: #ffffff;
+    min-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.hidden {
+    display: none !important;
+}
+
+h1 {
+    text-align: center;
+    margin: 40px 0 20px;
+    color: #4a3e3d;
+}
+
+p {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+input[type="text"] {
+    padding: 14px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+input[type="text"]:focus {
+    border-color: #8c7ae6;
+}
+
+button {
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: #8c7ae6;
+    color: white;
+    transition: background 0.2s;
+}
+
+button:disabled {
+    background-color: #ccc !important;
+    cursor: not-allowed;
+}
+
+#btn-join-p1 { background-color: #2ed573; }
+#btn-join-p2 { background-color: #ff4757; }
+
+/* Dashboard do Jogo */
+header {
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+header h2 {
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: #2f3542;
+}
+
+.room-indicator {
+    font-size: 12px;
+    color: #747d8c;
+    margin-top: 4px;
+}
+
+.scoreboard {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.player-panel {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f1f2f6;
+    border-bottom: 4px solid #ced6e0;
+}
+
+.p1-panel.active { background: #e3f2fd; border-bottom-color: #1e88e5; }
+.p2-panel.active { background: #ffebee; border-bottom-color: #e53935; }
+
+.player-title { font-size: 11px; font-weight: bold; color: #57606f; }
+.player-status { font-size: 13px; font-weight: bold; margin-top: 4px; }
+
+.turn-announcer {
+    background: #f5f6fa;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.input-section {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.input-section input { flex: 1; }
+
+/* Lista de Palpites */
+.history-section h3 {
+    font-size: 14px;
+    color: #57606f;
+    margin-bottom: 10px;
+}
+
+#words-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.empty-msg { font-size: 13px; color: #a4b0be; text-align: center; margin-top: 20px; }
+
+.word-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.word-entry.from-p1 {
+    background-color: #e3f2fd;
+    border-left: 5px solid #1e88e5;
+}
+
+.word-entry.from-p2 {
+    background-color: #ffebee;
+    border-left: 5px solid #e53935;
+}
+
+.word-entry .rank-badge {
+    background: rgba(0,0,0,0.06);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+}
