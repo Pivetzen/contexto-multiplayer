@@ -15,8 +15,8 @@
             <h1>Convexo Multiplayer</h1>
             <p>Crie uma sala ou entre em uma existente para jogar em turnos com seu amigo.</p>
             <div class="input-group">
-                <input type="text" id="room-input" placeholder="Digite o nome ou ID da sala">
-                <button id="btn-join-p1" onclick="joinRoom('player1')">Criar/Entrar como Jogador 1 (Azul)</button>
+                <input type="text" id="room-input" placeholder="Digite o nome ou ID da sala (ex: sala123)">
+                <button id="btn-join-p1" onclick="joinRoom('player1')">Criar / Entrar como Jogador 1 (Azul)</button>
                 <button id="btn-join-p2" onclick="joinRoom('player2')">Entrar como Jogador 2 (Rosa)</button>
             </div>
         </div>
@@ -29,11 +29,11 @@
 
             <div class="scoreboard">
                 <div class="player-panel p1-panel" id="panel-player1">
-                    <span class="player-title">JOGADOR 1</span>
+                    <span class="player-title">JOGADOR 1 (AZUL)</span>
                     <span class="player-status" id="status-player1">AGUARDANDO...</span>
                 </div>
                 <div class="player-panel p2-panel" id="panel-player2">
-                    <span class="player-title">JOGADOR 2</span>
+                    <span class="player-title">JOGADOR 2 (ROSA)</span>
                     <span class="player-status" id="status-player2">AGUARDANDO...</span>
                 </div>
             </div>
@@ -48,7 +48,7 @@
             </div>
 
             <div class="history-section">
-                <h3>Lista de Palavras e Rankings</h3>
+                <h3>Lista de Palavras e Rankings da Rodada</h3>
                 <div id="words-list-container">
                     <p class="empty-msg">Nenhum palpite enviado ainda nesta partida.</p>
                 </div>
