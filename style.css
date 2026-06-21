@@ -84,8 +84,8 @@ button:disabled {
     cursor: not-allowed;
 }
 
-#btn-join-p1 { background-color: #2ed573; }
-#btn-join-p2 { background-color: #ff4757; }
+#btn-join-p1 { background-color: #1e88e5; }
+#btn-join-p2 { background-color: #e53935; }
 
 /* Dashboard do Jogo */
 header {
@@ -122,10 +122,11 @@ header h2 {
     align-items: center;
     background: #f1f2f6;
     border-bottom: 4px solid #ced6e0;
+    transition: all 0.3s ease;
 }
 
-.p1-panel.active { background: #e3f2fd; border-bottom-color: #1e88e5; }
-.p2-panel.active { background: #ffebee; border-bottom-color: #e53935; }
+.p1-panel.active { background: #e3f2fd; border-bottom-color: #1e88e5; transform: scale(1.02); }
+.p2-panel.active { background: #ffebee; border-bottom-color: #e53935; transform: scale(1.02); }
 
 .player-title { font-size: 11px; font-weight: bold; color: #57606f; }
 .player-status { font-size: 13px; font-weight: bold; margin-top: 4px; }
@@ -133,11 +134,12 @@ header h2 {
 .turn-announcer {
     background: #f5f6fa;
     text-align: center;
-    padding: 10px;
+    padding: 12px;
     border-radius: 8px;
     font-weight: bold;
     margin-bottom: 15px;
     font-size: 14px;
+    border: 1px solid #e4e7eb;
 }
 
 .input-section {
@@ -147,6 +149,7 @@ header h2 {
 }
 
 .input-section input { flex: 1; }
+#btn-submit { background-color: #2ed573; padding: 0 20px; }
 
 /* Lista de Palpites */
 .history-section h3 {
@@ -159,7 +162,7 @@ header h2 {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 400px;
+    max-height: 380px;
     overflow-y: auto;
 }
 
@@ -172,16 +175,19 @@ header h2 {
     padding: 12px;
     border-radius: 6px;
     font-weight: 600;
+    animation: slideIn 0.2s ease-out;
 }
 
 .word-entry.from-p1 {
     background-color: #e3f2fd;
     border-left: 5px solid #1e88e5;
+    color: #0d47a1;
 }
 
 .word-entry.from-p2 {
     background-color: #ffebee;
     border-left: 5px solid #e53935;
+    color: #b71c1c;
 }
 
 .word-entry .rank-badge {
@@ -189,4 +195,10 @@ header h2 {
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 13px;
+    color: #333;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
