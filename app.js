@@ -1,13 +1,13 @@
 // --- CONFIGURAÇÃO DO FIREBASE ---
 // Subistatua pelos dados que você copiou do seu Console Firebase!
 const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-    projectId: "SEU_PROJETO",
-    storageBucket: "SEU_PROJETO.appspot.com",
-    messagingSenderId: "SEU_ID",
-    appId: "SEU_APP_ID"
+    apiKey: "AIzaSyCXUByWccNg_Ao29j4P0xofDnRDkqw6uok",
+    authDomain: "contexto-multiplayer.firebaseapp.com",
+    databaseURL: "https://contexto-multiplayer-default-rtdb.firebaseio.com/",
+    projectId: "contexto-multiplayer",
+    storageBucket: "contexto-multiplayer.firebasestorage.app",
+    messagingSenderId: "302542192118",
+    appId: "1:302542192118:web:d5f86b4077230aa78d1bd7"
 };
 
 // Inicializa o Firebase
