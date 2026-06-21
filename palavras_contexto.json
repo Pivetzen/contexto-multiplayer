@@ -1,0 +1,25 @@
+{
+  "partidas": {
+    "computador": {
+      "notebook": 2, "teclado": 5, "mouse": 12, "tela": 20, "monitor": 22, "internet": 45,
+      "programacao": 60, "site": 65, "software": 70, "hardware": 72, "escritorio": 90, 
+      "janela": 400, "cadeira": 600, "mesa": 650, "lampada": 1200, "telefone": 1500
+    },
+    "mercado": {
+      "supermercado": 2, "compras": 6, "preco": 10, "caixa": 18, "comida": 35, "alimento": 38,
+      "carrinho": 50, "dinheiro": 75, "pagamento": 80, "feira": 120, "sacola": 130, "rua": 500
+    },
+    "cachorro": {
+      "cao": 2, "gato": 10, "pet": 15, "racao": 22, "veterinario": 40, "animal": 55, 
+      "bicho": 58, "coleira": 70, "parque": 140, "carinho": 180, "lobo": 300, "osso": 320
+    },
+    "futebol": {
+      "bola": 2, "gol": 5, "campo": 10, "jogador": 14, "estadio": 25, "trave": 30,
+      "juiz": 45, "torcida": 50, "campeonato": 70, "time": 85, "apito": 110, "tenis": 900
+    },
+    "praia": {
+      "mar": 3, "areia": 5, "sol": 8, "calor": 15, "verao": 20, "peixe": 35,
+      "agua": 42, "biquini": 55, "sunga": 58, "guarda-sol": 70, "ferias": 90, "piscina": 210
+    }
+  }
+}
